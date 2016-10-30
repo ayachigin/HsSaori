@@ -2,22 +2,24 @@
 module HsSaori where
 
 import Foreign.C.String
-import Foreign.C.Types (CInt(..))
+import Foreign.C.Types (CUInt(..))
 import Foreign.Marshal.Alloc
 import Foreign.Ptr (nullPtr, Ptr, castPtr)
 import System.Win32.Mem
 
-foreign export ccall load :: HGLOBAL -> CInt -> IO Bool
-foreign export ccall unload :: IO Bool
-foreign export ccall request :: HGLOBAL -> Ptr CInt -> IO HGLOBAL
+foreign import stdcall "windows.h GlobalFree" gFree :: HGLOBAL -> IO ()
 
-request :: HGLOBAL -> Ptr CInt -> IO HGLOBAL
+foreign export ccall load :: HGLOBAL -> CUInt -> IO Bool
+foreign export ccall unload :: IO Bool
+foreign export ccall request :: HGLOBAL -> Ptr CUInt -> IO HGLOBAL
+
+request :: HGLOBAL -> Ptr CUInt -> IO HGLOBAL
 request h _ = do
   s <- toHsString $ castPtr h
   writeFile "input" s
   (cstr, n) <- newCStringLen message
   let m = succ n -- '\0'
-  --_ <- globalFree h
+  gFree h
   nh <- globalAlloc gMEM_FIXED (fromIntegral m)
   copyMemory nh (castPtr cstr) (fromIntegral m)
   free cstr
@@ -27,11 +29,11 @@ request h _ = do
               "Charset: UTF-8\r\n" ++
               "Result: fuga\r\n\r\n"
 
-load :: HGLOBAL -> CInt -> IO Bool
+load :: HGLOBAL -> CUInt -> IO Bool
 load h _ = do
   cstr <- toHsString $ castPtr h
   writeFile (cstr ++ "hsdll") cstr
-  --_ <- globalFree h
+  gFree h
   return True
 
 unload :: IO Bool
