@@ -40,6 +40,7 @@ unload = return True
 
 -- | peekCWString はポインタがNULLのときセグフォするのでNULLなら空文字列を返す
 toHsString :: CString -> IO String
-toHsString s = if s == nullPtr
-                       then return ""
-                       else peekCString s
+toHsString s = if s == nullPtr then
+                 return ""
+               else
+                 peekCString s
